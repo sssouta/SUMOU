@@ -639,6 +639,7 @@ MonoBehaviour:
   playerIndex: 2
   dashForce: 25
   dashCooldown: 1
+  hitEffectPrefab: {fileID: 8455817185797294938, guid: df748fddbecfef34791284c74a1323b6, type: 3}
 --- !u!1 &832575517
 GameObject:
   m_ObjectHideFlags: 0
@@ -1069,6 +1070,7 @@ MonoBehaviour:
   playerIndex: 1
   dashForce: 25
   dashCooldown: 1
+  hitEffectPrefab: {fileID: 8455817185797294938, guid: df748fddbecfef34791284c74a1323b6, type: 3}
 --- !u!1 &1065448675
 GameObject:
   m_ObjectHideFlags: 0

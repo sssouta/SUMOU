@@ -1,11 +1,14 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using System.Collections;
+using TMPro; // 👈 TextMesh Proを使うためにこれを追加！
 
 public class GameManager : MonoBehaviour
 {
-    // 外部から簡単にGameManagerを呼べるようにする仕組み（シングルトン）
     public static GameManager Instance { get; private set; }
+
+    [Header("勝利表示用のテキストUI")]
+    [SerializeField] private TextMeshProUGUI winnerText; // 👈 ここにさっきのWinnerTextを入れます
 
     private bool isGameOver = false;
 
@@ -15,25 +18,37 @@ public class GameManager : MonoBehaviour
         else Destroy(gameObject);
     }
 
-    // プレイヤーが落ちたときにKillZoneから呼ばれる関数
+    void Start()
+    {
+        // ゲーム開始時はテキストを確実に隠しておく
+        if (winnerText != null)
+        {
+            winnerText.gameObject.SetActive(false);
+        }
+    }
+
     public void PlayerFell(int loserIndex)
     {
         if (isGameOver) return;
         isGameOver = true;
 
-        // 勝った方の番号を計算 (1なら2、2なら1)
         int winnerIndex = (loserIndex == 1) ? 2 : 1;
+
+        // 【ここを追加！】画面に勝者を大きく表示する
+        if (winnerText != null)
+        {
+            winnerText.text = $"Player {winnerIndex} WIN!"; // 文字書き換え
+            winnerText.gameObject.SetActive(true);         // 画面に表示！
+        }
+
         Debug.Log($"【試合終了】 Player {winnerIndex} の勝利！");
 
-        // 3秒後に自動でステージをリセットするカウントダウンを開始
         StartCoroutine(RestartRound());
     }
 
     IEnumerator RestartRound()
     {
         yield return new WaitForSeconds(3f);
-
-        // 現在のシーンをもう一度読み直してリセットする（Unity 6対応）
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 }

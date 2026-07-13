@@ -24,7 +24,10 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
+
+        if (GameManager.Instance != null && !GameManager.Instance.IsGameActive) return;
         if (Gamepad.all.Count < playerIndex) return;
+
         Gamepad myGamepad = Gamepad.all[playerIndex - 1];
         inputVector = myGamepad.leftStick.ReadValue();
         if (myGamepad.buttonSouth.wasPressedThisFrame && Time.time >= nextDashTime)
@@ -35,6 +38,8 @@ public class PlayerController : MonoBehaviour
 
     void FixedUpdate()
     {
+        if (GameManager.Instance != null && !GameManager.Instance.IsGameActive) return;
+
         Vector3 moveDirection = new Vector3(inputVector.x, 0f, inputVector.y);
         if (inputVector.magnitude > 0.1f)
         {

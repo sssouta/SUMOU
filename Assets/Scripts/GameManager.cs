@@ -1,16 +1,25 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using System.Collections;
-using TMPro; // 👈 TextMesh Proを使うためにこれを追加！
+using TMPro;
 
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
 
-    [Header("勝利表示用のテキストUI")]
-    [SerializeField] private TextMeshProUGUI winnerText; // 👈 ここにさっきのWinnerTextを入れます
+    [Header("勝利表示・カウントダウン用のテキストUI")]
+    [SerializeField] private TextMeshProUGUI winnerText;
 
     private bool isGameOver = false;
+    public bool IsGameActive { get; private set; } = false;
+
+    // ==========================================
+    // 【ここを追加！】BO3（2本先取）用のスコア管理
+    // static（静的変数）にすることで、シーンを再読み込みしても数値が消えずに残ります！
+    // ==========================================
+    private static int player1Wins = 0;
+    private static int player2Wins = 0;
+    private const int WINS_TO_WIN_MATCH = 2; // 何本先取で勝ちにするか（2 = BO3）
 
     void Awake()
     {
@@ -20,28 +29,67 @@ public class GameManager : MonoBehaviour
 
     void Start()
     {
-        // ゲーム開始時はテキストを確実に隠しておく
         if (winnerText != null)
         {
-            winnerText.gameObject.SetActive(false);
+            winnerText.gameObject.SetActive(true);
+            StartCoroutine(StartMatchSequence());
         }
+    }
+
+    IEnumerator StartMatchSequence()
+    {
+        IsGameActive = false;
+
+        // 【演出追加！】現在の取得ラウンド数を、カウントダウンの前に一瞬表示する
+        winnerText.text = $"ROUND SCORE\nP1: {player1Wins} - P2: {player2Wins}";
+        yield return new WaitForSeconds(1.5f);
+
+        // カウントダウン開始
+        winnerText.text = "3";
+        yield return new WaitForSeconds(1f);
+        winnerText.text = "2";
+        yield return new WaitForSeconds(1f);
+        winnerText.text = "1";
+        yield return new WaitForSeconds(1f);
+
+        winnerText.text = "GO!";
+        IsGameActive = true;
+
+        yield return new WaitForSeconds(1f);
+        winnerText.gameObject.SetActive(false);
     }
 
     public void PlayerFell(int loserIndex)
     {
         if (isGameOver) return;
         isGameOver = true;
+        IsGameActive = false;
 
         int winnerIndex = (loserIndex == 1) ? 2 : 1;
 
-        // 【ここを追加！】画面に勝者を大きく表示する
+        // 【ここを追加！】勝ったプレイヤーのスコアを増やす
+        if (winnerIndex == 1) player1Wins++;
+        else player2Wins++;
+
         if (winnerText != null)
         {
-            winnerText.text = $"Player {winnerIndex} WIN!"; // 文字書き換え
-            winnerText.gameObject.SetActive(true);         // 画面に表示！
-        }
+            // 2勝したプレイヤーがいた場合（完全決着！）
+            if (player1Wins >= WINS_TO_WIN_MATCH || player2Wins >= WINS_TO_WIN_MATCH)
+            {
+                winnerText.text = $"Player {winnerIndex} MATCH WIN!";
 
-        Debug.Log($"【試合終了】 Player {winnerIndex} の勝利！");
+                // 次の試合のために、ここでスコアをリセットする
+                player1Wins = 0;
+                player2Wins = 0;
+            }
+            // まだどちらも2勝していない場合（次のラウンドへ）
+            else
+            {
+                winnerText.text = $"Player {winnerIndex} WIN!\n(P1: {player1Wins} - P2: {player2Wins})";
+            }
+
+            winnerText.gameObject.SetActive(true);
+        }
 
         StartCoroutine(RestartRound());
     }

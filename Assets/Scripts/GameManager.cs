@@ -10,21 +10,29 @@ public class GameManager : MonoBehaviour
     [Header("勝利表示・カウントダウン用のテキストUI")]
     [SerializeField] private TextMeshProUGUI winnerText;
 
+    [Header("カウントダウンSE")]
+    [SerializeField] private AudioSource audioSource;
+    [SerializeField] private AudioClip roundScoreSound;
+    [SerializeField] private AudioClip countSound;
+    [SerializeField] private AudioClip goSound;
+
     private bool isGameOver = false;
     public bool IsGameActive { get; private set; } = false;
 
-    // ==========================================
-    // 【ここを追加！】BO3（2本先取）用のスコア管理
-    // static（静的変数）にすることで、シーンを再読み込みしても数値が消えずに残ります！
-    // ==========================================
     private static int player1Wins = 0;
     private static int player2Wins = 0;
-    private const int WINS_TO_WIN_MATCH = 2; // 何本先取で勝ちにするか（2 = BO3）
+    private const int WINS_TO_WIN_MATCH = 2;
 
     void Awake()
     {
-        if (Instance == null) Instance = this;
-        else Destroy(gameObject);
+        if (Instance == null)
+        {
+            Instance = this;
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
     }
 
     void Start()
@@ -40,52 +48,80 @@ public class GameManager : MonoBehaviour
     {
         IsGameActive = false;
 
-        // 【演出追加！】現在の取得ラウンド数を、カウントダウンの前に一瞬表示する
+        // ラウンドスコア表示
         winnerText.text = $"ROUND SCORE\nP1: {player1Wins} - P2: {player2Wins}";
+
+        // ラウンドスコア表示時のSE
+        PlaySound(roundScoreSound);
+
         yield return new WaitForSeconds(1.5f);
 
-        // カウントダウン開始
+        // 3
         winnerText.text = "3";
-        yield return new WaitForSeconds(1f);
-        winnerText.text = "2";
-        yield return new WaitForSeconds(1f);
-        winnerText.text = "1";
+        PlaySound(countSound);
         yield return new WaitForSeconds(1f);
 
+        // 2
+        winnerText.text = "2";
+        PlaySound(countSound);
+        yield return new WaitForSeconds(1f);
+
+        // 1
+        winnerText.text = "1";
+        PlaySound(countSound);
+        yield return new WaitForSeconds(1f);
+
+        // GO!
         winnerText.text = "GO!";
+        PlaySound(goSound);
+
         IsGameActive = true;
 
         yield return new WaitForSeconds(1f);
         winnerText.gameObject.SetActive(false);
     }
 
+    private void PlaySound(AudioClip clip)
+    {
+        if (audioSource != null && clip != null)
+        {
+            audioSource.PlayOneShot(clip);
+        }
+    }
+
     public void PlayerFell(int loserIndex)
     {
         if (isGameOver) return;
+
         isGameOver = true;
         IsGameActive = false;
 
         int winnerIndex = (loserIndex == 1) ? 2 : 1;
 
-        // 【ここを追加！】勝ったプレイヤーのスコアを増やす
-        if (winnerIndex == 1) player1Wins++;
-        else player2Wins++;
+        if (winnerIndex == 1)
+        {
+            player1Wins++;
+        }
+        else
+        {
+            player2Wins++;
+        }
 
         if (winnerText != null)
         {
-            // 2勝したプレイヤーがいた場合（完全決着！）
-            if (player1Wins >= WINS_TO_WIN_MATCH || player2Wins >= WINS_TO_WIN_MATCH)
+            if (player1Wins >= WINS_TO_WIN_MATCH ||
+                player2Wins >= WINS_TO_WIN_MATCH)
             {
                 winnerText.text = $"Player {winnerIndex} MATCH WIN!";
 
-                // 次の試合のために、ここでスコアをリセットする
                 player1Wins = 0;
                 player2Wins = 0;
             }
-            // まだどちらも2勝していない場合（次のラウンドへ）
             else
             {
-                winnerText.text = $"Player {winnerIndex} WIN!\n(P1: {player1Wins} - P2: {player2Wins})";
+                winnerText.text =
+                    $"Player {winnerIndex} WIN!\n" +
+                    $"(P1: {player1Wins} - P2: {player2Wins})";
             }
 
             winnerText.gameObject.SetActive(true);

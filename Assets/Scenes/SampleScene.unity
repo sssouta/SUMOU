@@ -2624,7 +2624,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GameManager
   winnerText: {fileID: 1191222735}
   audioSource: {fileID: 1625304002}
-  roundScoreSound: {fileID: 0}
+  roundScoreSound: {fileID: 8300000, guid: 350630734a4095b4a8c3e953f255cdfd, type: 3}
   countSound: {fileID: 8300000, guid: b854f6574983a2d4bbda22b23b40a6a8, type: 3}
   goSound: {fileID: 8300000, guid: 80f67f0224e338a43aea2a482424db28, type: 3}
 --- !u!4 &1625304001

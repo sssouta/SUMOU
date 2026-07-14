@@ -10,20 +10,24 @@ public class GameManager : MonoBehaviour
     [Header("勝利表示・カウントダウン用のテキストUI")]
     [SerializeField] private TextMeshProUGUI winnerText;
 
-    [Header("カウントダウンSE")]
+    [Header("カウントダウン・ラウンド表示SE")]
     [SerializeField] private AudioSource audioSource;
     [SerializeField] private AudioClip roundScoreSound;
     [SerializeField] private AudioClip countSound;
     [SerializeField] private AudioClip goSound;
 
     private bool isGameOver = false;
+
     public bool IsGameActive { get; private set; } = false;
 
+    // BO3（2本先取）用のスコア
+    // staticにすることで、シーンを再読み込みしてもスコアを保持する
     private static int player1Wins = 0;
     private static int player2Wins = 0;
+
     private const int WINS_TO_WIN_MATCH = 2;
 
-    void Awake()
+    private void Awake()
     {
         if (Instance == null)
         {
@@ -35,26 +39,33 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    void Start()
+    private void Start()
     {
         if (winnerText != null)
         {
             winnerText.gameObject.SetActive(true);
             StartCoroutine(StartMatchSequence());
         }
+        else
+        {
+            Debug.LogWarning("GameManagerのWinner Textが設定されていません。");
+        }
     }
 
-    IEnumerator StartMatchSequence()
+    private IEnumerator StartMatchSequence()
     {
+        // カウントダウン中はプレイヤーを操作できないようにする
         IsGameActive = false;
 
-        // ラウンドスコア表示
-        winnerText.text = $"ROUND SCORE\nP1: {player1Wins} - P2: {player2Wins}";
+        // ラウンドスコアを表示
+        winnerText.text =
+            $"ROUND SCORE\nP1: {player1Wins} - P2: {player2Wins}";
 
-        // ラウンドスコア表示時のSE
+        // 表示と同時にSE
         PlaySound(roundScoreSound);
 
-        yield return new WaitForSeconds(1.5f);
+        // 合計1.5秒後にカウントダウン開始
+        yield return new WaitForSeconds(1.3f);
 
         // 3
         winnerText.text = "3";
@@ -75,29 +86,46 @@ public class GameManager : MonoBehaviour
         winnerText.text = "GO!";
         PlaySound(goSound);
 
+        // GO!が表示された瞬間から操作可能
         IsGameActive = true;
 
         yield return new WaitForSeconds(1f);
+
         winnerText.gameObject.SetActive(false);
     }
 
     private void PlaySound(AudioClip clip)
     {
-        if (audioSource != null && clip != null)
+        if (audioSource == null)
         {
-            audioSource.PlayOneShot(clip);
+            Debug.LogWarning("GameManagerのAudio Sourceが設定されていません。");
+            return;
         }
+
+        if (clip == null)
+        {
+            Debug.LogWarning("再生するSEが設定されていません。");
+            return;
+        }
+
+        audioSource.PlayOneShot(clip);
     }
 
     public void PlayerFell(int loserIndex)
     {
-        if (isGameOver) return;
+        // 勝敗処理が重複しないようにする
+        if (isGameOver)
+        {
+            return;
+        }
 
         isGameOver = true;
         IsGameActive = false;
 
-        int winnerIndex = (loserIndex == 1) ? 2 : 1;
+        // 落ちたプレイヤーとは反対側を勝者にする
+        int winnerIndex = loserIndex == 1 ? 2 : 1;
 
+        // 勝者の取得ラウンド数を増やす
         if (winnerIndex == 1)
         {
             player1Wins++;
@@ -109,16 +137,20 @@ public class GameManager : MonoBehaviour
 
         if (winnerText != null)
         {
+            // どちらかが2勝した場合
             if (player1Wins >= WINS_TO_WIN_MATCH ||
                 player2Wins >= WINS_TO_WIN_MATCH)
             {
-                winnerText.text = $"Player {winnerIndex} MATCH WIN!";
+                winnerText.text =
+                    $"Player {winnerIndex} MATCH WIN!";
 
+                // 次の試合に備えてスコアをリセット
                 player1Wins = 0;
                 player2Wins = 0;
             }
             else
             {
+                // まだ2勝していない場合
                 winnerText.text =
                     $"Player {winnerIndex} WIN!\n" +
                     $"(P1: {player1Wins} - P2: {player2Wins})";
@@ -130,9 +162,14 @@ public class GameManager : MonoBehaviour
         StartCoroutine(RestartRound());
     }
 
-    IEnumerator RestartRound()
+    private IEnumerator RestartRound()
     {
+        // 勝敗表示を3秒間見せる
         yield return new WaitForSeconds(3f);
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+
+        // 現在のシーンを再読み込み
+        SceneManager.LoadScene(
+            SceneManager.GetActiveScene().name
+        );
     }
 }

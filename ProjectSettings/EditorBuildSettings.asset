@@ -14,5 +14,11 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/ResultScene.unity
     guid: 3f66a011af112c241a1d3b69b2280b0c
+  - enabled: 1
+    path: Assets/Scenes/Stage_Normal.unity
+    guid: 195400268caea834baf55a99c4feb6b1
+  - enabled: 1
+    path: Assets/Scenes/Stage_Ice.unity
+    guid: 880753a8651b9794c85b5446ccea311a
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}

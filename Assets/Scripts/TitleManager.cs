@@ -4,6 +4,9 @@ using UnityEngine.InputSystem;
 
 public class TitleManager : MonoBehaviour
 {
+    [Header("遷移先のステージ選択シーン名")]
+    [SerializeField] private string StageSelectSceneName = "StageSelect";
+
     void Update()
     {
         // キーボードのSpaceキーが押されたか
@@ -12,10 +15,10 @@ public class TitleManager : MonoBehaviour
         // コントローラーのAボタン（下側のボタン）が押されたか
         bool aButtonPressed = Gamepad.current != null && Gamepad.current.buttonSouth.wasPressedThisFrame;
 
-        // どちらかが押されたらゲーム本編へ
+        // どちらかが押されたらステージ選択画面へ移動
         if (spacePressed || aButtonPressed)
         {
-            SceneManager.LoadScene(1);
+            SceneManager.LoadScene(StageSelectSceneName);
         }
     }
 }

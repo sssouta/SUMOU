@@ -21,6 +21,9 @@ public class PlayerController : MonoBehaviour
     [Header("攻撃SE")]
     [SerializeField] private AudioSource audioSource;
 
+    [Tooltip("ダッシュした瞬間の音")]
+    [SerializeField] private AudioClip dashSound;
+
     [Tooltip("片方だけがダッシュして当たったときの音")]
     [SerializeField] private AudioClip hitSound;
 
@@ -48,6 +51,19 @@ public class PlayerController : MonoBehaviour
         {
             Debug.LogError(
                 $"Player {playerIndex} にRigidbodyが付いていません。"
+            );
+        }
+
+        // AudioSourceをInspectorで設定し忘れても自動取得
+        if (audioSource == null)
+        {
+            audioSource = GetComponent<AudioSource>();
+        }
+
+        if (audioSource == null)
+        {
+            Debug.LogWarning(
+                $"Player {playerIndex} にAudioSourceがありません。"
             );
         }
     }
@@ -133,6 +149,9 @@ public class PlayerController : MonoBehaviour
         dashStartTime = Time.time;
         nextDashTime = Time.time + dashCooldown;
 
+        // ★ 攻撃ボタンを押してダッシュした瞬間にSE再生
+        PlayDashSound();
+
         Debug.Log($"Player {playerIndex} が体当たりした！");
     }
 
@@ -160,10 +179,9 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
-        // 2人ともダッシュ中に衝突した場合
+        // 2人ともダッシュ中に衝突
         if (thisPlayerIsAttacking && targetPlayerIsAttacking)
         {
-            // 音とエフェクトが2回出ないようにPlayer1側だけで処理
             if (playerIndex == 1)
             {
                 CreateHitEffect(collision);
@@ -175,7 +193,7 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
-        // 自分だけがダッシュ中の場合、自分の攻撃として処理
+        // 自分がダッシュしていない場合は処理しない
         if (!thisPlayerIsAttacking)
         {
             return;
@@ -233,11 +251,24 @@ public class PlayerController : MonoBehaviour
         Destroy(effect, 3f);
     }
 
+    // ダッシュした瞬間
+    private void PlayDashSound()
+    {
+        if (audioSource == null || dashSound == null)
+        {
+            return;
+        }
+
+        audioSource.PlayOneShot(dashSound);
+    }
+
+    // 攻撃が相手にヒット
     private void PlayHitSound()
     {
         PlaySound(hitSound);
     }
 
+    // 2人同時攻撃
     private void PlayClashSound()
     {
         PlaySound(clashSound);

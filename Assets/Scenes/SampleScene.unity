@@ -1469,6 +1469,12 @@ MonoBehaviour:
   dashForce: 25
   dashCooldown: 1
   hitEffectPrefab: {fileID: 8804711371726786416, guid: 45b2ee3cfff087743a4dd6cc07ee427b, type: 3}
+  audioSource: {fileID: 0}
+  dashSound: {fileID: 0}
+  hitSound: {fileID: 0}
+  clashSound: {fileID: 0}
+  hitSoundCooldown: 0.1
+  attackActiveTime: 0.2
 --- !u!1 &756450327
 GameObject:
   m_ObjectHideFlags: 0
@@ -2124,6 +2130,12 @@ MonoBehaviour:
   dashForce: 25
   dashCooldown: 1
   hitEffectPrefab: {fileID: 8804711371726786416, guid: 45b2ee3cfff087743a4dd6cc07ee427b, type: 3}
+  audioSource: {fileID: 0}
+  dashSound: {fileID: 0}
+  hitSound: {fileID: 8300000, guid: 567c9e8cd4d50e647a34ea0de4e97572, type: 3}
+  clashSound: {fileID: 8300000, guid: 0d2c3304dff7c45499372ef1d77cc3c1, type: 3}
+  hitSoundCooldown: 0.1
+  attackActiveTime: 0.2
 --- !u!1 &995081923
 GameObject:
   m_ObjectHideFlags: 0

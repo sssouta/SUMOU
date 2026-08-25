@@ -16,12 +16,14 @@ public class GameManager : MonoBehaviour
     [SerializeField] private AudioClip countSound;
     [SerializeField] private AudioClip goSound;
 
+    [Header("遷移先のタイトルシーン名")]
+    [SerializeField] private string titleSceneName = "TitleScene"; // ※実際のタイトルシーン名に合わせて変更してください
+
     private bool isGameOver = false;
 
     public bool IsGameActive { get; private set; } = false;
 
     // BO3（2本先取）用のスコア
-    // staticにすることで、シーンを再読み込みしてもスコアを保持する
     private static int player1Wins = 0;
     private static int player2Wins = 0;
 
@@ -64,7 +66,7 @@ public class GameManager : MonoBehaviour
         // 表示と同時にSE
         PlaySound(roundScoreSound);
 
-        // 合計1.5秒後にカウントダウン開始
+        // 合計1.3秒後にカウントダウン開始
         yield return new WaitForSeconds(1.3f);
 
         // 3
@@ -135,22 +137,26 @@ public class GameManager : MonoBehaviour
             player2Wins++;
         }
 
+        bool isMatchFinished = false;
+
         if (winnerText != null)
         {
-            // どちらかが2勝した場合
+            // どちらかが2勝した場合（1マッチ終了）
             if (player1Wins >= WINS_TO_WIN_MATCH ||
                 player2Wins >= WINS_TO_WIN_MATCH)
             {
                 winnerText.text =
                     $"Player {winnerIndex} MATCH WIN!";
 
-                // 次の試合に備えてスコアをリセット
+                // 次のマッチに備えてスコアをリセット
                 player1Wins = 0;
                 player2Wins = 0;
+
+                isMatchFinished = true;
             }
             else
             {
-                // まだ2勝していない場合
+                // まだ2勝していない場合（次のラウンドへ）
                 winnerText.text =
                     $"Player {winnerIndex} WIN!\n" +
                     $"(P1: {player1Wins} - P2: {player2Wins})";
@@ -159,17 +165,23 @@ public class GameManager : MonoBehaviour
             winnerText.gameObject.SetActive(true);
         }
 
-        StartCoroutine(RestartRound());
+        StartCoroutine(RestartRound(isMatchFinished));
     }
 
-    private IEnumerator RestartRound()
+    private IEnumerator RestartRound(bool isMatchFinished)
     {
         // 勝敗表示を3秒間見せる
         yield return new WaitForSeconds(3f);
 
-        // 現在のシーンを再読み込み
-        SceneManager.LoadScene(
-            SceneManager.GetActiveScene().name
-        );
+        if (isMatchFinished)
+        {
+            // マッチ終了時はタイトルシーンへ戻る
+            SceneManager.LoadScene(titleSceneName);
+        }
+        else
+        {
+            // ラウンド継続時は現在のシーンを再読み込み
+            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        }
     }
 }

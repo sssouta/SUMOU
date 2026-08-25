@@ -14,8 +14,8 @@ public class StageSelectManager : MonoBehaviour
         SceneManager.LoadScene("Stage_Ice");
     }
 
-    public void LoadMagmaStage()
+    public void LoadHoleStage()
     {
-        SceneManager.LoadScene("Stage_Magma");
+        SceneManager.LoadScene("Stage_Hole");
     }
 }

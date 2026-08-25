@@ -1466,10 +1466,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
   moveSpeed: 7
   playerIndex: 2
-  dashForce: 25
-  dashCooldown: 1
+  dashSpeed: 20
+  dashDuration: 0.15
+  dashCooldown: 2
   hitEffectPrefab: {fileID: 8804711371726786416, guid: 45b2ee3cfff087743a4dd6cc07ee427b, type: 3}
   audioSource: {fileID: 0}
+  dashSound: {fileID: 0}
   hitSound: {fileID: 0}
   clashSound: {fileID: 0}
   hitSoundCooldown: 0.1
@@ -2126,10 +2128,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
   moveSpeed: 7
   playerIndex: 1
-  dashForce: 25
-  dashCooldown: 1
+  dashSpeed: 20
+  dashDuration: 0.15
+  dashCooldown: 2
   hitEffectPrefab: {fileID: 8804711371726786416, guid: 45b2ee3cfff087743a4dd6cc07ee427b, type: 3}
   audioSource: {fileID: 0}
+  dashSound: {fileID: 0}
   hitSound: {fileID: 0}
   clashSound: {fileID: 0}
   hitSoundCooldown: 0.1
@@ -2637,6 +2641,7 @@ MonoBehaviour:
   roundScoreSound: {fileID: 8300000, guid: 350630734a4095b4a8c3e953f255cdfd, type: 3}
   countSound: {fileID: 8300000, guid: b854f6574983a2d4bbda22b23b40a6a8, type: 3}
   goSound: {fileID: 8300000, guid: 80f67f0224e338a43aea2a482424db28, type: 3}
+  titleSceneName: TitleScene
 --- !u!4 &1625304001
 Transform:
   m_ObjectHideFlags: 0

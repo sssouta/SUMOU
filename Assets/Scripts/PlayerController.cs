@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using System.Collections; // IEnumerator を使うために必要
 
 public class PlayerController : MonoBehaviour
 {
@@ -9,8 +10,11 @@ public class PlayerController : MonoBehaviour
     [Header("プレイヤー番号（1か2を入れる）")]
     [SerializeField] private int playerIndex = 1;
 
-    [Header("体当たり（ダッシュ）の威力")]
-    [SerializeField] private float dashForce = 25f;
+    [Header("体当たり（ダッシュ）の速度")]
+    [SerializeField] private float dashSpeed = 20f; // ★ ダッシュ中の移動スピード
+
+    [Header("ダッシュの継続時間（秒）")]
+    [SerializeField] private float dashDuration = 0.25f; // ★ ここを大きくすると距離が伸びる！
 
     [Header("ダッシュのクールタイム（秒）")]
     [SerializeField] private float dashCooldown = 1f;
@@ -43,18 +47,18 @@ public class PlayerController : MonoBehaviour
     private float dashStartTime = -999f;
     private float lastHitSoundTime = -999f;
 
+    private bool isDashing = false; // ★ 現在ダッシュ中かどうか
+    private Vector3 currentDashDirection; // ★ ダッシュしている方向
+
     private void Start()
     {
         rb = GetComponent<Rigidbody>();
 
         if (rb == null)
         {
-            Debug.LogError(
-                $"Player {playerIndex} にRigidbodyが付いていません。"
-            );
+            Debug.LogError($"Player {playerIndex} にRigidbodyが付いていません。");
         }
 
-        // AudioSourceをInspectorで設定し忘れても自動取得
         if (audioSource == null)
         {
             audioSource = GetComponent<AudioSource>();
@@ -62,16 +66,13 @@ public class PlayerController : MonoBehaviour
 
         if (audioSource == null)
         {
-            Debug.LogWarning(
-                $"Player {playerIndex} にAudioSourceがありません。"
-            );
+            Debug.LogWarning($"Player {playerIndex} にAudioSourceがありません。");
         }
     }
 
     private void Update()
     {
-        if (GameManager.Instance != null &&
-            !GameManager.Instance.IsGameActive)
+        if (GameManager.Instance != null && !GameManager.Instance.IsGameActive)
         {
             inputVector = Vector2.zero;
             return;
@@ -87,8 +88,7 @@ public class PlayerController : MonoBehaviour
 
         inputVector = myGamepad.leftStick.ReadValue();
 
-        if (myGamepad.buttonSouth.wasPressedThisFrame &&
-            Time.time >= nextDashTime)
+        if (myGamepad.buttonSouth.wasPressedThisFrame && Time.time >= nextDashTime)
         {
             Dash();
         }
@@ -96,8 +96,7 @@ public class PlayerController : MonoBehaviour
 
     private void FixedUpdate()
     {
-        if (GameManager.Instance != null &&
-            !GameManager.Instance.IsGameActive)
+        if (GameManager.Instance != null && !GameManager.Instance.IsGameActive)
         {
             return;
         }
@@ -107,11 +106,19 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
-        Vector3 moveDirection = new Vector3(
-            inputVector.x,
-            0f,
-            inputVector.y
-        );
+        // ★ ダッシュ中の場合はダッシュ速度を優先して固定で適用する
+        if (isDashing)
+        {
+            rb.linearVelocity = new Vector3(
+                currentDashDirection.x * dashSpeed,
+                rb.linearVelocity.y,
+                currentDashDirection.z * dashSpeed
+            );
+            return;
+        }
+
+        // 通常移動処理
+        Vector3 moveDirection = new Vector3(inputVector.x, 0f, inputVector.y);
 
         if (inputVector.magnitude > 0.1f)
         {
@@ -125,34 +132,37 @@ public class PlayerController : MonoBehaviour
 
     private void Dash()
     {
-        if (rb == null)
+        if (rb == null || isDashing)
         {
             return;
         }
 
-        Vector3 dashDirection = new Vector3(
-            inputVector.x,
-            0f,
-            inputVector.y
-        ).normalized;
+        Vector3 dashDirection = new Vector3(inputVector.x, 0f, inputVector.y).normalized;
 
         if (dashDirection == Vector3.zero)
         {
             dashDirection = transform.forward;
         }
 
-        rb.AddForce(
-            dashDirection * dashForce,
-            ForceMode.VelocityChange
-        );
+        currentDashDirection = dashDirection;
 
         dashStartTime = Time.time;
         nextDashTime = Time.time + dashCooldown;
 
-        // ★ 攻撃ボタンを押してダッシュした瞬間にSE再生
         PlayDashSound();
 
+        // ★ ダッシュ状態を開始するコルーチンを実行
+        StartCoroutine(DashRoutine());
+
         Debug.Log($"Player {playerIndex} が体当たりした！");
+    }
+
+    // ★ 指定時間だけダッシュ状態を維持するコルーチン
+    private IEnumerator DashRoutine()
+    {
+        isDashing = true;
+        yield return new WaitForSeconds(dashDuration);
+        isDashing = false;
     }
 
     public bool IsAttacking()
@@ -162,8 +172,7 @@ public class PlayerController : MonoBehaviour
 
     private void OnCollisionEnter(Collision collision)
     {
-        PlayerController targetPlayer =
-            collision.gameObject.GetComponent<PlayerController>();
+        PlayerController targetPlayer = collision.gameObject.GetComponent<PlayerController>();
 
         if (targetPlayer == null)
         {
@@ -173,13 +182,11 @@ public class PlayerController : MonoBehaviour
         bool thisPlayerIsAttacking = IsAttacking();
         bool targetPlayerIsAttacking = targetPlayer.IsAttacking();
 
-        // どちらも攻撃中ではない普通の接触なら何もしない
         if (!thisPlayerIsAttacking && !targetPlayerIsAttacking)
         {
             return;
         }
 
-        // 2人ともダッシュ中に衝突
         if (thisPlayerIsAttacking && targetPlayerIsAttacking)
         {
             if (playerIndex == 1)
@@ -193,7 +200,6 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
-        // 自分がダッシュしていない場合は処理しない
         if (!thisPlayerIsAttacking)
         {
             return;
@@ -203,21 +209,17 @@ public class PlayerController : MonoBehaviour
         CreateHitEffect(collision);
         PlayHitSound();
 
-        Debug.Log(
-            $"Player {playerIndex} の体当たりがヒット！"
-        );
+        Debug.Log($"Player {playerIndex} の体当たりがヒット！");
     }
 
     private void BlowAwayTarget(Collision collision)
     {
-        Vector3 direction =
-            collision.transform.position - transform.position;
+        Vector3 direction = collision.transform.position - transform.position;
 
         direction.y = 0f;
         direction.Normalize();
 
-        Rigidbody targetRb =
-            collision.gameObject.GetComponent<Rigidbody>();
+        Rigidbody targetRb = collision.gameObject.GetComponent<Rigidbody>();
 
         if (targetRb == null)
         {
@@ -226,16 +228,16 @@ public class PlayerController : MonoBehaviour
 
         targetRb.linearVelocity = Vector3.zero;
 
+        // 吹き飛ばす威力は dashSpeed を基準に調整
         targetRb.AddForce(
-            direction * (dashForce * 1.5f),
+            direction * (dashSpeed * 1.5f),
             ForceMode.VelocityChange
         );
     }
 
     private void CreateHitEffect(Collision collision)
     {
-        if (hitEffectPrefab == null ||
-            collision.contactCount == 0)
+        if (hitEffectPrefab == null || collision.contactCount == 0)
         {
             return;
         }
@@ -251,7 +253,6 @@ public class PlayerController : MonoBehaviour
         Destroy(effect, 3f);
     }
 
-    // ダッシュした瞬間
     private void PlayDashSound()
     {
         if (audioSource == null || dashSound == null)
@@ -262,13 +263,11 @@ public class PlayerController : MonoBehaviour
         audioSource.PlayOneShot(dashSound);
     }
 
-    // 攻撃が相手にヒット
     private void PlayHitSound()
     {
         PlaySound(hitSound);
     }
 
-    // 2人同時攻撃
     private void PlayClashSound()
     {
         PlaySound(clashSound);
@@ -278,17 +277,13 @@ public class PlayerController : MonoBehaviour
     {
         if (audioSource == null)
         {
-            Debug.LogWarning(
-                $"Player {playerIndex} のAudio Sourceが設定されていません。"
-            );
+            Debug.LogWarning($"Player {playerIndex} のAudio Sourceが設定されていません。");
             return;
         }
 
         if (clip == null)
         {
-            Debug.LogWarning(
-                $"Player {playerIndex} のAudio Clipが設定されていません。"
-            );
+            Debug.LogWarning($"Player {playerIndex} のAudio Clipが設定されていません。");
             return;
         }
 

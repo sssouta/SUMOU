@@ -638,7 +638,7 @@ Transform:
   m_GameObject: {fileID: 227428367}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -29.6, y: -24.2, z: 4.8}
+  m_LocalPosition: {x: -29.29, y: -24.2, z: 4.8}
   m_LocalScale: {x: 3, y: 3, z: 3}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1469,6 +1469,11 @@ MonoBehaviour:
   dashForce: 25
   dashCooldown: 1
   hitEffectPrefab: {fileID: 8804711371726786416, guid: 45b2ee3cfff087743a4dd6cc07ee427b, type: 3}
+  audioSource: {fileID: 0}
+  hitSound: {fileID: 0}
+  clashSound: {fileID: 0}
+  hitSoundCooldown: 0.1
+  attackActiveTime: 0.2
 --- !u!1 &756450327
 GameObject:
   m_ObjectHideFlags: 0
@@ -2124,6 +2129,11 @@ MonoBehaviour:
   dashForce: 25
   dashCooldown: 1
   hitEffectPrefab: {fileID: 8804711371726786416, guid: 45b2ee3cfff087743a4dd6cc07ee427b, type: 3}
+  audioSource: {fileID: 0}
+  hitSound: {fileID: 0}
+  clashSound: {fileID: 0}
+  hitSoundCooldown: 0.1
+  attackActiveTime: 0.2
 --- !u!1 &995081923
 GameObject:
   m_ObjectHideFlags: 0

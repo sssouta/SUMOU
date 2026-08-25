@@ -16,6 +16,9 @@ public class GameManager : MonoBehaviour
     [SerializeField] private AudioClip countSound;
     [SerializeField] private AudioClip goSound;
 
+    [Header("最終勝利SE")]
+    [SerializeField] private AudioClip winSound;
+
     private bool isGameOver = false;
 
     public bool IsGameActive { get; private set; } = false;
@@ -48,7 +51,9 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("GameManagerのWinner Textが設定されていません。");
+            Debug.LogWarning(
+                "GameManagerのWinner Textが設定されていません。"
+            );
         }
     }
 
@@ -64,7 +69,7 @@ public class GameManager : MonoBehaviour
         // 表示と同時にSE
         PlaySound(roundScoreSound);
 
-        // 合計1.5秒後にカウントダウン開始
+        // 1.3秒後にカウントダウン開始
         yield return new WaitForSeconds(1.3f);
 
         // 3
@@ -98,13 +103,17 @@ public class GameManager : MonoBehaviour
     {
         if (audioSource == null)
         {
-            Debug.LogWarning("GameManagerのAudio Sourceが設定されていません。");
+            Debug.LogWarning(
+                "GameManagerのAudio Sourceが設定されていません。"
+            );
             return;
         }
 
         if (clip == null)
         {
-            Debug.LogWarning("再生するSEが設定されていません。");
+            Debug.LogWarning(
+                "再生するSEが設定されていません。"
+            );
             return;
         }
 
@@ -141,8 +150,12 @@ public class GameManager : MonoBehaviour
             if (player1Wins >= WINS_TO_WIN_MATCH ||
                 player2Wins >= WINS_TO_WIN_MATCH)
             {
+                // 最終勝利を表示
                 winnerText.text =
                     $"Player {winnerIndex} MATCH WIN!";
+
+                // ★ MATCH WIN!表示と同時に最終勝利SEを再生
+                PlaySound(winSound);
 
                 // 次の試合に備えてスコアをリセット
                 player1Wins = 0;

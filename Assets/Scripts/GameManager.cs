@@ -16,8 +16,13 @@ public class GameManager : MonoBehaviour
     [SerializeField] private AudioClip countSound;
     [SerializeField] private AudioClip goSound;
 
+    // ★追加
+    [Header("対戦BGM")]
+    [SerializeField] private AudioSource battleBgmSource;
+    [SerializeField] private AudioClip battleBgm;
+
     [Header("遷移先のタイトルシーン名")]
-    [SerializeField] private string titleSceneName = "TitleScene"; // ※実際のタイトルシーン名に合わせて変更してください
+    [SerializeField] private string titleSceneName = "TitleScene";
 
     private bool isGameOver = false;
 
@@ -56,17 +61,21 @@ public class GameManager : MonoBehaviour
 
     private IEnumerator StartMatchSequence()
     {
-        // カウントダウン中はプレイヤーを操作できないようにする
+        // カウントダウン中はプレイヤーを操作できない
         IsGameActive = false;
 
-        // ラウンドスコアを表示
+        // 念のためBGMを止めておく
+        if (battleBgmSource != null)
+        {
+            battleBgmSource.Stop();
+        }
+
+        // ラウンドスコア表示
         winnerText.text =
             $"ROUND SCORE\nP1: {player1Wins} - P2: {player2Wins}";
 
-        // 表示と同時にSE
         PlaySound(roundScoreSound);
 
-        // 合計1.3秒後にカウントダウン開始
         yield return new WaitForSeconds(1.3f);
 
         // 3
@@ -88,7 +97,10 @@ public class GameManager : MonoBehaviour
         winnerText.text = "GO!";
         PlaySound(goSound);
 
-        // GO!が表示された瞬間から操作可能
+        // ★GO!と同時に対戦BGM開始
+        PlayBattleBGM();
+
+        // GO!から操作可能
         IsGameActive = true;
 
         yield return new WaitForSeconds(1f);
@@ -96,6 +108,7 @@ public class GameManager : MonoBehaviour
         winnerText.gameObject.SetActive(false);
     }
 
+    // SE再生
     private void PlaySound(AudioClip clip)
     {
         if (audioSource == null)
@@ -113,6 +126,26 @@ public class GameManager : MonoBehaviour
         audioSource.PlayOneShot(clip);
     }
 
+    // ★対戦BGM再生
+    private void PlayBattleBGM()
+    {
+        if (battleBgmSource == null)
+        {
+            Debug.LogWarning("対戦BGM用のAudio Sourceが設定されていません。");
+            return;
+        }
+
+        if (battleBgm == null)
+        {
+            Debug.LogWarning("対戦BGMが設定されていません。");
+            return;
+        }
+
+        battleBgmSource.clip = battleBgm;
+        battleBgmSource.loop = true;
+        battleBgmSource.Play();
+    }
+
     public void PlayerFell(int loserIndex)
     {
         // 勝敗処理が重複しないようにする
@@ -124,10 +157,15 @@ public class GameManager : MonoBehaviour
         isGameOver = true;
         IsGameActive = false;
 
+        // ★勝敗が決まったらBGM停止
+        if (battleBgmSource != null)
+        {
+            battleBgmSource.Stop();
+        }
+
         // 落ちたプレイヤーとは反対側を勝者にする
         int winnerIndex = loserIndex == 1 ? 2 : 1;
 
-        // 勝者の取得ラウンド数を増やす
         if (winnerIndex == 1)
         {
             player1Wins++;
@@ -141,14 +179,13 @@ public class GameManager : MonoBehaviour
 
         if (winnerText != null)
         {
-            // どちらかが2勝した場合（1マッチ終了）
+            // どちらかが2勝した場合
             if (player1Wins >= WINS_TO_WIN_MATCH ||
                 player2Wins >= WINS_TO_WIN_MATCH)
             {
                 winnerText.text =
                     $"Player {winnerIndex} MATCH WIN!";
 
-                // 次のマッチに備えてスコアをリセット
                 player1Wins = 0;
                 player2Wins = 0;
 
@@ -156,7 +193,6 @@ public class GameManager : MonoBehaviour
             }
             else
             {
-                // まだ2勝していない場合（次のラウンドへ）
                 winnerText.text =
                     $"Player {winnerIndex} WIN!\n" +
                     $"(P1: {player1Wins} - P2: {player2Wins})";
@@ -170,17 +206,14 @@ public class GameManager : MonoBehaviour
 
     private IEnumerator RestartRound(bool isMatchFinished)
     {
-        // 勝敗表示を3秒間見せる
         yield return new WaitForSeconds(3f);
 
         if (isMatchFinished)
         {
-            // マッチ終了時はタイトルシーンへ戻る
             SceneManager.LoadScene(titleSceneName);
         }
         else
         {
-            // ラウンド継続時は現在のシーンを再読み込み
             SceneManager.LoadScene(SceneManager.GetActiveScene().name);
         }
     }

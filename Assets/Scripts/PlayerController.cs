@@ -302,7 +302,7 @@ public class PlayerController : MonoBehaviour
         targetRb.linearVelocity = Vector3.zero;
 
         targetRb.AddForce(
-            direction * (dashSpeed * 1.5f),
+            direction * (dashSpeed * 2.5f),
             ForceMode.VelocityChange
         );
     }

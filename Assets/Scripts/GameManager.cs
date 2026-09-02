@@ -12,11 +12,25 @@ public class GameManager : MonoBehaviour
 
     [Header("カウントダウン・ラウンド表示SE")]
     [SerializeField] private AudioSource audioSource;
+
+    [Tooltip("ラウンド開始時のスコア表示SE")]
     [SerializeField] private AudioClip roundScoreSound;
+
+    [Tooltip("3・2・1のカウントSE")]
     [SerializeField] private AudioClip countSound;
+
+    [Tooltip("GO!のSE")]
     [SerializeField] private AudioClip goSound;
 
-    // ★追加
+    // ★追加：ラウンド勝利SE
+    [Header("勝利SE")]
+
+    [Tooltip("1ラウンド取得した時のSE")]
+    [SerializeField] private AudioClip roundWinSound;
+
+    [Tooltip("2ラウンド取得して試合に勝利した時のSE")]
+    [SerializeField] private AudioClip matchWinSound;
+
     [Header("対戦BGM")]
     [SerializeField] private AudioSource battleBgmSource;
     [SerializeField] private AudioClip battleBgm;
@@ -97,7 +111,7 @@ public class GameManager : MonoBehaviour
         winnerText.text = "GO!";
         PlaySound(goSound);
 
-        // ★GO!と同時に対戦BGM開始
+        // GO!と同時に対戦BGM開始
         PlayBattleBGM();
 
         // GO!から操作可能
@@ -126,7 +140,7 @@ public class GameManager : MonoBehaviour
         audioSource.PlayOneShot(clip);
     }
 
-    // ★対戦BGM再生
+    // 対戦BGM再生
     private void PlayBattleBGM()
     {
         if (battleBgmSource == null)
@@ -157,7 +171,7 @@ public class GameManager : MonoBehaviour
         isGameOver = true;
         IsGameActive = false;
 
-        // ★勝敗が決まったらBGM停止
+        // 勝敗が決まったらBGM停止
         if (battleBgmSource != null)
         {
             battleBgmSource.Stop();
@@ -186,6 +200,9 @@ public class GameManager : MonoBehaviour
                 winnerText.text =
                     $"Player {winnerIndex} MATCH WIN!";
 
+                // ★追加：最終勝利SE
+                PlaySound(matchWinSound);
+
                 player1Wins = 0;
                 player2Wins = 0;
 
@@ -196,6 +213,9 @@ public class GameManager : MonoBehaviour
                 winnerText.text =
                     $"Player {winnerIndex} WIN!\n" +
                     $"(P1: {player1Wins} - P2: {player2Wins})";
+
+                // ★追加：1ラウンド取得SE
+                PlaySound(roundWinSound);
             }
 
             winnerText.gameObject.SetActive(true);

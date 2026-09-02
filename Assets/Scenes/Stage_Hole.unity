@@ -5269,6 +5269,8 @@ MonoBehaviour:
   roundScoreSound: {fileID: 8300000, guid: 350630734a4095b4a8c3e953f255cdfd, type: 3}
   countSound: {fileID: 8300000, guid: b854f6574983a2d4bbda22b23b40a6a8, type: 3}
   goSound: {fileID: 8300000, guid: 80f67f0224e338a43aea2a482424db28, type: 3}
+  roundWinSound: {fileID: 8300000, guid: 81c9f028c4054ef409cf1b206361673d, type: 3}
+  matchWinSound: {fileID: 8300000, guid: 674165769a2819a4b8c181a1e532a009, type: 3}
   battleBgmSource: {fileID: 1006321761}
   battleBgm: {fileID: 8300000, guid: 27be601199d5cf141bec92e257eb4b11, type: 3}
   titleSceneName: TitleScene

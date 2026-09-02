@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
-using System.Collections; // IEnumerator を使うために必要
+using UnityEngine.UI; // ★追加：クールタイムUI用
+using System.Collections;
 
 public class PlayerController : MonoBehaviour
 {
@@ -11,10 +12,10 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private int playerIndex = 1;
 
     [Header("体当たり（ダッシュ）の速度")]
-    [SerializeField] private float dashSpeed = 20f; // ★ ダッシュ中の移動スピード
+    [SerializeField] private float dashSpeed = 20f;
 
     [Header("ダッシュの継続時間（秒）")]
-    [SerializeField] private float dashDuration = 0.25f; // ★ ここを大きくすると距離が伸びる！
+    [SerializeField] private float dashDuration = 0.25f;
 
     [Header("ダッシュのクールタイム（秒）")]
     [SerializeField] private float dashCooldown = 1f;
@@ -40,6 +41,12 @@ public class PlayerController : MonoBehaviour
     [Header("ダッシュの攻撃判定時間")]
     [SerializeField] private float attackActiveTime = 0.2f;
 
+    // =========================================
+    // ★追加：クールタイムUI
+    // =========================================
+    [Header("クールタイムUI")]
+    [SerializeField] private Image cooldownFill;
+
     private Rigidbody rb;
     private Vector2 inputVector = Vector2.zero;
 
@@ -47,8 +54,8 @@ public class PlayerController : MonoBehaviour
     private float dashStartTime = -999f;
     private float lastHitSoundTime = -999f;
 
-    private bool isDashing = false; // ★ 現在ダッシュ中かどうか
-    private Vector3 currentDashDirection; // ★ ダッシュしている方向
+    private bool isDashing = false;
+    private Vector3 currentDashDirection;
 
     private void Start()
     {
@@ -68,6 +75,13 @@ public class PlayerController : MonoBehaviour
         {
             Debug.LogWarning($"Player {playerIndex} にAudioSourceがありません。");
         }
+
+        // ★追加
+        // ゲーム開始時は攻撃可能なのでゲージを満タンにする
+        if (cooldownFill != null)
+        {
+            cooldownFill.fillAmount = 1f;
+        }
     }
 
     private void Update()
@@ -75,12 +89,20 @@ public class PlayerController : MonoBehaviour
         if (GameManager.Instance != null && !GameManager.Instance.IsGameActive)
         {
             inputVector = Vector2.zero;
+
+            // ★追加
+            UpdateCooldownUI();
+
             return;
         }
 
         if (Gamepad.all.Count < playerIndex)
         {
             inputVector = Vector2.zero;
+
+            // ★追加
+            UpdateCooldownUI();
+
             return;
         }
 
@@ -88,10 +110,14 @@ public class PlayerController : MonoBehaviour
 
         inputVector = myGamepad.leftStick.ReadValue();
 
+        // クールタイムが終了している場合だけダッシュ可能
         if (myGamepad.buttonSouth.wasPressedThisFrame && Time.time >= nextDashTime)
         {
             Dash();
         }
+
+        // ★追加：毎フレームゲージを更新
+        UpdateCooldownUI();
     }
 
     private void FixedUpdate()
@@ -106,7 +132,7 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
-        // ★ ダッシュ中の場合はダッシュ速度を優先して固定で適用する
+        // ダッシュ中
         if (isDashing)
         {
             rb.linearVelocity = new Vector3(
@@ -114,11 +140,16 @@ public class PlayerController : MonoBehaviour
                 rb.linearVelocity.y,
                 currentDashDirection.z * dashSpeed
             );
+
             return;
         }
 
-        // 通常移動処理
-        Vector3 moveDirection = new Vector3(inputVector.x, 0f, inputVector.y);
+        // 通常移動
+        Vector3 moveDirection = new Vector3(
+            inputVector.x,
+            0f,
+            inputVector.y
+        );
 
         if (inputVector.magnitude > 0.1f)
         {
@@ -137,7 +168,11 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
-        Vector3 dashDirection = new Vector3(inputVector.x, 0f, inputVector.y).normalized;
+        Vector3 dashDirection = new Vector3(
+            inputVector.x,
+            0f,
+            inputVector.y
+        ).normalized;
 
         if (dashDirection == Vector3.zero)
         {
@@ -147,21 +182,29 @@ public class PlayerController : MonoBehaviour
         currentDashDirection = dashDirection;
 
         dashStartTime = Time.time;
+
+        // ★クールタイム開始
         nextDashTime = Time.time + dashCooldown;
+
+        // ★攻撃した瞬間にゲージを空にする
+        if (cooldownFill != null)
+        {
+            cooldownFill.fillAmount = 0f;
+        }
 
         PlayDashSound();
 
-        // ★ ダッシュ状態を開始するコルーチンを実行
         StartCoroutine(DashRoutine());
 
         Debug.Log($"Player {playerIndex} が体当たりした！");
     }
 
-    // ★ 指定時間だけダッシュ状態を維持するコルーチン
     private IEnumerator DashRoutine()
     {
         isDashing = true;
+
         yield return new WaitForSeconds(dashDuration);
+
         isDashing = false;
     }
 
@@ -170,9 +213,36 @@ public class PlayerController : MonoBehaviour
         return Time.time <= dashStartTime + attackActiveTime;
     }
 
+    // =========================================
+    // ★追加：クールタイムゲージ処理
+    // =========================================
+    private void UpdateCooldownUI()
+    {
+        if (cooldownFill == null)
+        {
+            return;
+        }
+
+        // あと何秒クールタイムが残っているか
+        float remainingTime = nextDashTime - Time.time;
+
+        // クールタイム終了
+        if (remainingTime <= 0f)
+        {
+            cooldownFill.fillAmount = 1f;
+            return;
+        }
+
+        // 0 → 1まで徐々に増やす
+        float progress = 1f - (remainingTime / dashCooldown);
+
+        cooldownFill.fillAmount = Mathf.Clamp01(progress);
+    }
+
     private void OnCollisionEnter(Collision collision)
     {
-        PlayerController targetPlayer = collision.gameObject.GetComponent<PlayerController>();
+        PlayerController targetPlayer =
+            collision.gameObject.GetComponent<PlayerController>();
 
         if (targetPlayer == null)
         {
@@ -187,6 +257,7 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
+        // 2人とも攻撃中
         if (thisPlayerIsAttacking && targetPlayerIsAttacking)
         {
             if (playerIndex == 1)
@@ -214,12 +285,14 @@ public class PlayerController : MonoBehaviour
 
     private void BlowAwayTarget(Collision collision)
     {
-        Vector3 direction = collision.transform.position - transform.position;
+        Vector3 direction =
+            collision.transform.position - transform.position;
 
         direction.y = 0f;
         direction.Normalize();
 
-        Rigidbody targetRb = collision.gameObject.GetComponent<Rigidbody>();
+        Rigidbody targetRb =
+            collision.gameObject.GetComponent<Rigidbody>();
 
         if (targetRb == null)
         {
@@ -228,7 +301,6 @@ public class PlayerController : MonoBehaviour
 
         targetRb.linearVelocity = Vector3.zero;
 
-        // 吹き飛ばす威力は dashSpeed を基準に調整
         targetRb.AddForce(
             direction * (dashSpeed * 1.5f),
             ForceMode.VelocityChange
@@ -277,13 +349,19 @@ public class PlayerController : MonoBehaviour
     {
         if (audioSource == null)
         {
-            Debug.LogWarning($"Player {playerIndex} のAudio Sourceが設定されていません。");
+            Debug.LogWarning(
+                $"Player {playerIndex} のAudio Sourceが設定されていません。"
+            );
+
             return;
         }
 
         if (clip == null)
         {
-            Debug.LogWarning($"Player {playerIndex} のAudio Clipが設定されていません。");
+            Debug.LogWarning(
+                $"Player {playerIndex} のAudio Clipが設定されていません。"
+            );
+
             return;
         }
 
@@ -293,6 +371,7 @@ public class PlayerController : MonoBehaviour
         }
 
         audioSource.PlayOneShot(clip);
+
         lastHitSoundTime = Time.time;
     }
 }
